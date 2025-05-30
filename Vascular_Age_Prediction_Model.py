@@ -16,6 +16,9 @@ from sklearn.svm import SVR
 from xgboost import XGBRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_absolute_error
+from sklearn.linear_model import Lasso
+
+
 
 def load_json_all_data(json_file_path):
     #Read the JSON file and return two groups by gender
@@ -261,7 +264,7 @@ def KDM_Age(X, Y, X_test, Y_test):
 #  Main Function
 def main():
     # JSON file path
-    JSON_file_path = r"F:/HuNan/SD/Final_6.json"  #
+    JSON_file_path = r""  #
 
     male_all_data, female_all_data = load_json_all_data(JSON_file_path)
     # Original features
@@ -347,6 +350,44 @@ def main():
     plot_results(y_test_pca, y_pred_mlr_pca, 'MLR-Female', color='#1f77b4')
     error_stats = plot_error_distribution(y_test_pca, y_pred_mlr_pca, 'MLR-Female', color='#1f77b4')
 
+    # ==================== LASSO Regression Model ====================
+    print("\n========== LASSO Regression Model ==========")
+
+    # LASSO Male (PCA)
+    Y = male_all_feature[:, -1]
+    X_train_pca, X_test_pca, y_train_pca, y_test_pca = train_test_split(
+        pca_male_features, Y, test_size=0.3, random_state=42)
+
+    # Use grid search to find the best alpha parameter
+    lasso = Lasso()
+    parameters = {'alpha': [0.001, 0.01, 0.1, 1, 10]}
+    lasso_model_pca = GridSearchCV(lasso, parameters, cv=5)
+    lasso_model_pca.fit(X_train_pca, y_train_pca)
+
+    print(f"Best alpha for male: {lasso_model_pca.best_params_['alpha']}")
+
+    y_pred_pca = lasso_model_pca.predict(X_test_pca)
+    rmse_pca = np.sqrt(mean_squared_error(y_test_pca, y_pred_pca))
+    print(f'LASSO Model male_PCA RMSE: {rmse_pca:.4f}')
+    plot_results(y_test_pca, y_pred_pca, 'LASSO-Male', color='#1f77b4')
+    error_stats = plot_error_distribution(y_test_pca, y_pred_pca, 'LASSO-Male', color='#1f77b4')
+
+    # LASSO Female (PCA)
+    Y = female_all_feature[:, -1]
+    X_train_pca, X_test_pca, y_train_pca, y_test_pca = train_test_split(
+        pca_female_features, Y, test_size=0.3, random_state=42)
+
+    lasso_model_pca = GridSearchCV(lasso, parameters, cv=5)
+    lasso_model_pca.fit(X_train_pca, y_train_pca)
+
+    print(f"Best alpha for female: {lasso_model_pca.best_params_['alpha']}")
+
+    y_pred_pca = lasso_model_pca.predict(X_test_pca)
+    rmse_pca = np.sqrt(mean_squared_error(y_test_pca, y_pred_pca))
+    print(f'LASSO Model female_PCA RMSE: {rmse_pca:.4f}')
+    plot_results(y_test_pca, y_pred_pca, 'LASSO-Female', color='#1f77b4')
+    error_stats = plot_error_distribution(y_test_pca, y_pred_pca, 'LASSO-Female', color='#1f77b4')
+
     print("\n========== SVR Model ==========")
 
 
@@ -364,7 +405,7 @@ def main():
     plot_results(y_test_pca, y_pred_pca, 'SVR-Male', color='#1f77b4')
     error_stats = plot_error_distribution(y_test_pca, y_pred_pca, 'SVR-Male', color='#1f77b4')
 
-    # SVR Female (PCA特征)
+    # SVR Female (PCA )
     Y = female_all_feature[:, -1]
     X_train_pca, X_test_pca, y_train_pca, y_test_pca = train_test_split(
         pca_female_features, Y, test_size=0.3, random_state=42)
